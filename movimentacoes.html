@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Movimentações de Colaboradores</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f7f7f5;
+      --bg-tertiary: #f0efe8;
+      --bg-info: #e6f1fb;
+      --bg-success: #eaf3de;
+      --bg-danger: #fcebeb;
+      --bg-warning: #faeeda;
+      --text: #1a1a18;
+      --text-secondary: #6b6b66;
+      --text-tertiary: #9c9a92;
+      --text-info: #0c447c;
+      --text-success: #27500a;
+      --text-danger: #791f1f;
+      --border: rgba(0,0,0,0.12);
+      --border-secondary: rgba(0,0,0,0.22);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1c;
+        --bg-secondary: #2a2a28;
+        --bg-tertiary: #242422;
+        --bg-info: #042c53;
+        --bg-success: #173404;
+        --bg-danger: #501313;
+        --bg-warning: #412402;
+        --text: #e8e6de;
+        --text-secondary: #a8a69e;
+        --text-tertiary: #6e6c65;
+        --text-info: #85b7eb;
+        --text-success: #97c459;
+        --text-danger: #f09595;
+        --border: rgba(255,255,255,0.12);
+        --border-secondary: rgba(255,255,255,0.22);
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg-tertiary);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    header {
+      background: var(--bg);
+      border-bottom: 0.5px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header .logo {
+      width: 36px; height: 36px;
+      background: var(--bg-info);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-info);
+      font-size: 20px;
+    }
+
+    header h1 { font-size: 16px; font-weight: 500; }
+    header p { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+
+    .card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .upload-grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr) !important; }
+      main { padding: 1rem; }
+    }
+
+    .drop-zone {
+      border: 1.5px dashed var(--border-secondary);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .drop-zone:hover, .drop-zone.over { background: var(--bg-secondary); }
+    .drop-zone.done { border-color: #639922; border-style: solid; }
+    .drop-zone i { font-size: 28px; color: var(--text-tertiary); display: block; margin-bottom: .6rem; }
+    .drop-zone .dz-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: .3rem; }
+    .drop-zone .dz-sub { font-size: 12px; color: var(--text-tertiary); }
+
+    input[type=file] { display: none; }
+
+    .file-status {
+      font-size: 12px;
+      margin-top: .5rem;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 20px;
+    }
+    .file-status.ok { color: var(--text-success); }
+    .file-status.err { color: var(--text-danger); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .metric {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: .85rem 1rem;
+    }
+    .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .metric-value { font-size: 24px; font-weight: 500; }
+    .metric-value.blue { color: var(--text-info); }
+    .metric-value.green { color: var(--text-success); }
+    .metric-value.red { color: var(--text-danger); }
+    .metric-value.muted { color: var(--text-secondary); }
+
+    .alert {
+      font-size: 13px;
+      padding: .75rem 1rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert.info { background: var(--bg-info); color: var(--text-info); }
+    .alert.success { background: var(--bg-success); color: var(--text-success); }
+    .alert.error { background: var(--bg-danger); color: var(--text-danger); }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tab {
+      font-size: 13px;
+      padding: 5px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border: 0.5px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      transition: background .12s;
+    }
+    .tab:hover { background: var(--bg-secondary); }
+    .tab.active {
+      background: var(--bg-secondary);
+      color: var(--text);
+      font-weight: 500;
+      border-color: var(--border-secondary);
+    }
+
+    .badge-count {
+      display: inline-block;
+      font-size: 11px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border-radius: 10px;
+      padding: 1px 7px;
+      margin-left: 4px;
+    }
+
+    .tab-spacer { flex: 1; }
+
+    .btn {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border: 0.5px solid var(--border-secondary);
+      background: transparent;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .12s;
+    }
+    .btn:hover { background: var(--bg-secondary); }
+    .btn:active { transform: scale(.98); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .scroll-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    th {
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-size: 12px;
+      padding: 7px 10px;
+      border-bottom: 0.5px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 0.5px solid var(--border);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg-secondary); }
+
+    .col-nome   { width: 27%; }
+    .col-email  { width: 30%; }
+    .col-emp    { width: 17%; }
+    .col-data   { width: 14%; }
+    .col-tipo   { width: 12%; }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .tag.adm { background: #eaf3de; color: #27500a; }
+    .tag.des { background: #fcebeb; color: #791f1f; }
+    .tag.sem { background: var(--bg-secondary); color: var(--text-secondary); }
+
+    .empty {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
+
+    .empty i { font-size: 28px; display: block; margin-bottom: .5rem; }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      border-top: 0.5px solid var(--border);
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><i class="ti ti-users-group" aria-hidden="true"></i></div>
+  <div>
+    <h1>Simulador de movimentações de colaboradores</h1>
+    <p>Detecção automática de admissões e desligamentos por comparação de planilhas</p>
+  </div>
+</header>
+
+<main>
+
+  <div class="upload-grid">
+    <div class="card" style="margin-bottom:0">
+      <div class="section-title">
+        <i class="ti ti-database" aria-hidden="true"></i>
+        Base anterior (mês passado)
+      </div>
+      <div class="drop-zone" id="zone-base" onclick="document.getElementById('file-base').click()" role="button" tabindex="0" aria-label="Selecionar planilha da base anterior">
+        <i class="ti ti-table-import" aria-hidden="true"></i>
+        <div class="dz-title">Clique ou arraste o arquivo</div>
+        <div class="dz-sub">.xlsx ou .csv com a base do mês anterior</div>
+      </div>
+      <input type="file" id="file-base" accept=".xlsx,.xls,.csv">
+      <div class="file-status" id="status-base"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="section-title">
+        <i class="ti ti-file-upload" aria-hidden="true"></i>
+        Planilha nova (mês atual)
+      </div>
+      <div class="drop-zone" id="zone-nova" onclick="document.getElementById('file-nova').click()" role="button" tabindex="0" aria-label="Selecionar planilha do mês atual">
+        <i class="ti ti-table-import" aria-hidden="true"></i>
+        <div class="dz-title">Clique ou arraste o arquivo</div>
+        <div class="dz-sub">.xlsx ou .csv com a exportação do mês atual</div>
+      </div>
+      <input type="file" id="file-nova" accept=".xlsx,.xls,.csv">
+      <div class="file-status" id="status-nova"></div>
+    </div>
+  </div>
+
+  <div id="alert-box"></div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Total ativos (novo)</div>
+      <div class="metric-value blue" id="m-total">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Admissões detectadas</div>
+      <div class="metric-value green" id="m-adm">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Desligamentos detectados</div>
+      <div class="metric-value red" id="m-des">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Sem alteração</div>
+      <div class="metric-value muted" id="m-sem">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" data-tab="todos">Todos <span class="badge-count" id="cnt-todos">0</span></button>
+      <button class="tab" data-tab="adm">Admissões <span class="badge-count" id="cnt-adm">0</span></button>
+      <button class="tab" data-tab="des">Desligamentos <span class="badge-count" id="cnt-des">0</span></button>
+      <button class="tab" data-tab="sem">Sem alteração <span class="badge-count" id="cnt-sem">0</span></button>
+      <div class="tab-spacer"></div>
+      <button class="btn" id="btn-export" style="display:none" onclick="exportCSV()">
+        <i class="ti ti-download" aria-hidden="true"></i> Exportar CSV
+      </button>
+    </div>
+
+    <div class="tab-content active" id="tab-todos">
+      <div class="scroll-wrap">
+        <table>
+          <thead><tr>
+            <th class="col-nome">Nome</th>
+            <th class="col-email">E-mail</th>
+            <th class="col-emp">Empresa</th>
+            <th class="col-data">Data</th>
+            <th class="col-tipo">Movimentação</th>
+          </tr></thead>
+          <tbody id="body-todos">
+            <tr><td colspan="5" class="empty"><i class="ti ti-upload" aria-hidden="true"></i>Faça upload das duas planilhas para ver os resultados</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-adm">
+      <div class="scroll-wrap">
+        <table>
+          <thead><tr>
+            <th class="col-nome">Nome</th>
+            <th class="col-email">E-mail</th>
+            <th class="col-emp">Empresa</th>
+            <th class="col-data">Data adm.</th>
+            <th class="col-tipo">Movimentação</th>
+          </tr></thead>
+          <tbody id="body-adm">
+            <tr><td colspan="5" class="empty"><i class="ti ti-user-plus" aria-hidden="true"></i>Nenhuma admissão detectada ainda</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-des">
+      <div class="scroll-wrap">
+        <table>
+          <thead><tr>
+            <th class="col-nome">Nome</th>
+            <th class="col-email">E-mail</th>
+            <th class="col-emp">Empresa</th>
+            <th class="col-data">Data deslig.</th>
+            <th class="col-tipo">Movimentação</th>
+          </tr></thead>
+          <tbody id="body-des">
+            <tr><td colspan="5" class="empty"><i class="ti ti-user-minus" aria-hidden="true"></i>Nenhum desligamento detectado ainda</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-sem">
+      <div class="scroll-wrap">
+        <table>
+          <thead><tr>
+            <th class="col-nome">Nome</th>
+            <th class="col-email">E-mail</th>
+            <th class="col-emp">Empresa</th>
+            <th class="col-data">Data adm.</th>
+            <th class="col-tipo">Movimentação</th>
+          </tr></thead>
+          <tbody id="body-sem">
+            <tr><td colspan="5" class="empty"><i class="ti ti-minus" aria-hidden="true"></i>Nenhum colaborador sem alteração ainda</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Processamento 100% local — nenhum dado é enviado para servidores externos.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+  let dadosBase = null, dadosNova = null, resultados = [];
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert-box');
+    el.innerHTML = msg
+      ? `<div class="alert ${type}"><i class="ti ti-${type === 'success' ? 'check' : type === 'error' ? 'alert-circle' : 'info-circle'}" aria-hidden="true"></i>${msg}</div>`
+      : '';
+  }
+
+  function lerArquivo(file, callback) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        callback(null, rows);
+      } catch (err) {
+        callback('Erro ao ler o arquivo: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function normEmail(e) { return String(e || '').trim().toLowerCase(); }
+
+  function formatDate(v) {
+    if (!v) return '';
+    if (v instanceof Date) return v.toLocaleDateString('pt-BR');
+    if (typeof v === 'string' && v.trim()) return v.trim();
+    return '';
+  }
+
+  function encontrarColuna(row, candidatos) {
+    const keys = Object.keys(row);
+    for (const c of candidatos) {
+      const k = keys.find(k => k.trim().toLowerCase() === c.toLowerCase());
+      if (k) return k;
+    }
+    return null;
+  }
+
+  function mapearColunas(rows) {
+    if (!rows.length) return null;
+    const r = rows[0];
+    return {
+      nome:         encontrarColuna(r, ['Nome completo', 'Nome', 'name', 'full name']),
+      email:        encontrarColuna(r, ['Email', 'E-mail', 'email', 'e-mail']),
+      admissao:     encontrarColuna(r, ['Data de admissão', 'Data admissão', 'admissao', 'hire date']),
+      empresa:      encontrarColuna(r, ['Empresa', 'empresa', 'company']),
+      desligamento: encontrarColuna(r, ['Data de desligamento', 'Data desligamento', 'desligamento', 'termination date']),
+    };
+  }
+
+  function processarDados() {
+    if (!dadosBase || !dadosNova) return;
+
+    const colBase = mapearColunas(dadosBase);
+    const colNova = mapearColunas(dadosNova);
+
+    if (!colBase?.email || !colNova?.email) {
+      showAlert('Coluna de e-mail não encontrada em uma das planilhas. Verifique se o arquivo possui a coluna "Email".', 'error');
+      return;
+    }
+
+    const mapaBase = new Map();
+    dadosBase.forEach(r => {
+      const email = normEmail(r[colBase.email]);
+      if (email) mapaBase.set(email, r);
+    });
+
+    resultados = [];
+
+    dadosNova.forEach(r => {
+      const email = normEmail(r[colNova.email]);
+      if (!email) return;
+      const nome    = r[colNova.nome]    || '';
+      const empresa = r[colNova.empresa] || '';
+      const dtAdm   = formatDate(r[colNova.admissao]);
+      const dtDes   = colNova.desligamento ? formatDate(r[colNova.desligamento]) : '';
+      const existia = mapaBase.has(email);
+
+      let tipo;
+      if (!existia && !dtDes)       tipo = 'adm';
+      else if (existia && dtDes)    tipo = 'des';
+      else                           tipo = 'sem';
+
+      resultados.push({ nome, email, empresa, dtAdm, dtDes, tipo });
+    });
+
+    dadosBase.forEach(r => {
+      const email = normEmail(r[colBase.email]);
+      if (!email) return;
+      const jaEsta = dadosNova.some(n => normEmail(n[colNova.email]) === email);
+      if (!jaEsta) {
+        resultados.push({
+          nome:    r[colBase.nome]    || '',
+          email,
+          empresa: r[colBase.empresa] || '',
+          dtAdm:   formatDate(r[colBase.admissao]),
+          dtDes:   formatDate(colBase.desligamento ? r[colBase.desligamento] : ''),
+          tipo:    'des'
+        });
+      }
+    });
+
+    const adm   = resultados.filter(r => r.tipo === 'adm');
+    const des   = resultados.filter(r => r.tipo === 'des');
+    const sem   = resultados.filter(r => r.tipo === 'sem');
+    const total = dadosNova.filter(r => normEmail(r[colNova.email])).length;
+
+    document.getElementById('m-total').textContent = total;
+    document.getElementById('m-adm').textContent   = adm.length;
+    document.getElementById('m-des').textContent   = des.length;
+    document.getElementById('m-sem').textContent   = sem.length;
+    document.getElementById('cnt-todos').textContent = resultados.length;
+    document.getElementById('cnt-adm').textContent   = adm.length;
+    document.getElementById('cnt-des').textContent   = des.length;
+    document.getElementById('cnt-sem').textContent   = sem.length;
+
+    renderTabela('body-todos', resultados, 'todos');
+    renderTabela('body-adm',   adm,        'adm');
+    renderTabela('body-des',   des,        'des');
+    renderTabela('body-sem',   sem,        'sem');
+
+    document.getElementById('btn-export').style.display = '';
+    showAlert(
+      `Processamento concluído: <strong>${adm.length}</strong> admissão(ões), <strong>${des.length}</strong> desligamento(s), <strong>${sem.length}</strong> sem alteração.`,
+      'success'
+    );
+  }
+
+  function tagHTML(tipo) {
+    if (tipo === 'adm') return '<span class="tag adm">Admissão</span>';
+    if (tipo === 'des') return '<span class="tag des">Desligamento</span>';
+    return '<span class="tag sem">Sem alteração</span>';
+  }
+
+  function renderTabela(tbodyId, dados, filtro) {
+    const tbody = document.getElementById(tbodyId);
+    if (!dados.length) {
+      const msgs = { adm: 'ti-user-plus|Nenhuma admissão detectada', des: 'ti-user-minus|Nenhum desligamento detectado', sem: 'ti-minus|Nenhum colaborador sem alteração', todos: 'ti-upload|Faça upload das duas planilhas' };
+      const [icon, msg] = (msgs[filtro] || 'ti-minus|Sem dados').split('|');
+      tbody.innerHTML = `<tr><td colspan="5" class="empty"><i class="ti ${icon}" aria-hidden="true"></i>${msg}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = dados.map(r => {
+      const data = (r.tipo === 'des' && r.dtDes) ? r.dtDes : r.dtAdm;
+      return `<tr>
+        <td class="col-nome" title="${r.nome}">${r.nome}</td>
+        <td class="col-email" title="${r.email}">${r.email}</td>
+        <td class="col-emp" title="${r.empresa}">${r.empresa}</td>
+        <td class="col-data">${data}</td>
+        <td class="col-tipo">${tagHTML(r.tipo)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function exportCSV() {
+    if (!resultados.length) return;
+    const header = 'Nome,Email,Empresa,Data Admissão,Data Desligamento,Movimentação\n';
+    const rows = resultados.map(r =>
+      [r.nome, r.email, r.empresa, r.dtAdm, r.dtDes,
+       r.tipo === 'adm' ? 'Admissão' : r.tipo === 'des' ? 'Desligamento' : 'Sem alteração']
+      .map(v => `"${String(v).replace(/"/g, '""')}"`)
+      .join(',')
+    ).join('\n');
+    const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'movimentacoes_' + new Date().toISOString().slice(0, 7) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function setupUpload(zoneId, fileId, lado) {
+    const zone   = document.getElementById(zoneId);
+    const input  = document.getElementById(fileId);
+    const status = document.getElementById('status-' + lado);
+
+    function handle(file) {
+      status.className = 'file-status';
+      status.textContent = 'Lendo ' + file.name + '…';
+      lerArquivo(file, (err, rows) => {
+        if (err) {
+          status.className = 'file-status err';
+          status.innerHTML = `<i class="ti ti-alert-circle"></i>${err}`;
+          showAlert(err, 'error');
+          return;
+        }
+        status.className = 'file-status ok';
+        status.innerHTML = `<i class="ti ti-check"></i>${file.name} — ${rows.length} registros carregados`;
+        zone.classList.add('done');
+        if (lado === 'base') dadosBase = rows;
+        else dadosNova = rows;
+        processarDados();
+      });
+    }
+
+    input.onchange = () => { if (input.files[0]) handle(input.files[0]); };
+
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      if (e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]);
+    });
+    zone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') input.click();
+    });
+  }
+
+  setupUpload('zone-base', 'file-base', 'base');
+  setupUpload('zone-nova', 'file-nova', 'nova');
+
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
